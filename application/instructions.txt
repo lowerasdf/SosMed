@@ -1,0 +1,42 @@
+Instructions:
+
+How to Load Network
+1. Click file
+2. Click upload 
+Or press ctrl + U
+
+How to Save Network
+1. Click file 
+2.Click save  
+Or press shortcut ctrl + S
+
+How to add friend
+1. Click add friend
+
+How to search for friends
+1. Type name of friend you want to search  
+2. Click search
+
+How to remove friend
+1. Click remove friend button
+
+How to Log Out
+1. Click on logout button
+
+How to Close Window without warnings
+1. Type ctrl + F
+
+How to find mutual friends
+1. Click on friend. 
+2. Click search.
+3. Mutual friends will Appear in window
+
+How to find shortest path of friends between two users
+1. Select person A
+2. Select person B 
+3. Click find path button 
+
+How to set a new central user
+1. Select the new central user
+3. Click Set Central User button 
+

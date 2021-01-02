@@ -1,0 +1,4 @@
+#!/bin/bash
+# ateam 69 final project
+
+java --module-path /Users/bloomestjansenchandra/Desktop/Bloomest\ JC\ Folder/eclipse-workspace/javafx-sdk-11.0.2/lib --add-modules javafx.controls,javafx.fxml -jar executable.jar

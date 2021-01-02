@@ -1,0 +1,8 @@
+.root{
+	-fx-background-image: url("/Bascom_Hall_in_Madison.jpeg");
+        -fx-background-size: cover;
+}
+
+.label{
+	-fx-font-family:"Arial";
+}
