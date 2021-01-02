@@ -1,0 +1,1220 @@
+package application;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Modality;
+
+public class Main extends Application {
+    private static final int WINDOW_WIDTH = 900;
+    private static final int WINDOW_HEIGHT = 600;
+    private static final String APP_TITLE = "Social Media";
+    private static final String LOG_FILE_NAME = "log.txt";
+
+    private ListView<Button> friendsList;
+
+    private Scene friendScene;
+
+    private Pane friendRoot;
+
+    private Network network;
+
+    private ListView<Button> mutualList = new ListView<>();
+
+    private ComboBox<String> mutualA = new ComboBox<>();
+
+    private ComboBox<String> mutualB = new ComboBox<>();
+
+    private ComboBox<String> start = new ComboBox<>();
+
+    private ComboBox<String> target = new ComboBox<>();
+
+    private ComboBox<String> targetCentral = new ComboBox<>();
+
+    private ListView<String> shortestList = new ListView<>();
+
+    ListView<String> history = new ListView<>();
+
+    Button reset = new Button("Reset");
+
+    Label centralUser;
+
+    private void updateGraphVisualization() {
+        // Pane root = new Pane();
+        // friendScene = new Scene (root , 200 , 125);
+
+        // Friends of the user
+        List<Person> friendList;
+
+        friendRoot.getChildren().clear();
+
+        try {
+            friendList = this.network.getFriends(centralUser.getText());
+            // User node
+            Button user = friendButton(centralUser.getText());
+
+            user.setPrefWidth(50);
+            user.setFont(Font.font("Brush Script", 12.5));
+
+            StackPane userStackPane = new StackPane();
+            Rectangle userRectangle = new Rectangle();
+            userRectangle.setFill(Color.AQUA);
+            userRectangle.setStroke(Color.BLUEVIOLET);
+            userRectangle.setStrokeWidth(3);
+            userRectangle.setWidth(user.getText().length() * 15);
+            userRectangle.setHeight(30);
+            userStackPane.getChildren().addAll(userRectangle, user);
+            userStackPane.setLayoutX(
+                    friendScene.getWidth() / 2 - userRectangle.getWidth() / 2);
+            userStackPane.setLayoutY(25);
+            friendRoot.getChildren().add(userStackPane);
+
+
+            // Friends of user node
+            for (int i = 0; i < friendList.size(); ++i) {
+
+                // The circle
+                Circle circle = new Circle();
+                circle.setFill(Color.AQUAMARINE);
+
+                // The circle if friendList is less than 4 so that the scene
+                // looks nicer
+                // if (friendList.size() < 4) {
+                circle.setRadius(25);
+                // }
+                //
+                // else {
+                // circle.setRadius(friendScene.getWidth() / friendList.size() /
+                // 2);
+                // }
+
+                circle.setStroke(Color.MEDIUMAQUAMARINE);
+                circle.setStrokeWidth(3);
+
+                // The text in the circle
+                Button text = friendButton(friendList.get(i).getName());
+                // text.setStyle("-fx-background-radius:10px;");
+                VBox box = new VBox(new Label(""), text);
+
+                StackPane stack = new StackPane(circle, box);
+
+                stack.setLayoutX(
+                        i * friendScene.getWidth() / friendList.size());
+                stack.setLayoutY(75);
+                // stack.setOnMouseClicked(event -> text.fire());
+
+                // stack.getChildren().addAll(circle, box);
+                // stack.getChildren().addAll(box);
+
+
+                stack.setPickOnBounds(false);
+
+                // Start of the Line
+                Line line = new Line();
+                line.setStartX(userStackPane.getLayoutX()
+                        + userRectangle.getWidth() / 2);
+                line.setStartY(
+                        userStackPane.getLayoutY() + userRectangle.getHeight());
+
+
+                // End of the Line
+                line.setEndX(i * friendScene.getWidth() / friendList.size()
+                        + circle.getRadius());
+                line.setEndY(75);
+
+                friendRoot.getChildren().add(line);
+                friendRoot.getChildren().add(stack);
+            }
+        } catch (VertexNotFoundException e) {
+        }
+
+    }
+
+    private void updateComboBox() {
+        mutualA.getItems().clear();
+        for (Person friend : network.getAllUsers()) {
+            mutualA.getItems().add(friend.getName());
+        }
+        mutualA.setValue("--select person A--");
+
+        mutualB.getItems().clear();
+        for (Person friend : network.getAllUsers()) {
+            mutualB.getItems().add(friend.getName());
+        }
+        mutualB.setValue("--select person B--");
+
+        start.getItems().clear();
+        for (Person friend : network.getAllUsers()) {
+            start.getItems().add(friend.getName());
+        }
+        start.setValue("--select starting person--");
+
+        target.getItems().clear();
+        for (Person friend : network.getAllUsers()) {
+            target.getItems().add(friend.getName());
+        }
+        target.setValue("--select target person--");
+
+        targetCentral.getItems().clear();
+        targetCentral.setValue("--select new central user--");
+        for (Person friend : network.getAllUsers()) {
+            targetCentral.getItems().add(friend.getName());
+        }
+    }
+
+    private Button friendButton(String str) {
+        Button friend = new Button(str);
+        friend.setStyle("-fx-background-color: transparent;");
+        friend.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent arg0) {
+                centralUser.setText(str);
+                List<Person> allFriends;
+                try {
+                    allFriends = network.getFriends(centralUser.getText());
+                    List<Button> list = new LinkedList<>();
+                    Button centralUserButton =
+                            friendButton(centralUser.getText());
+                    list.add(centralUserButton);
+
+                    for (Person friend : allFriends) {
+                        list.add(friendButton(friend.getName()));
+                    }
+                    friendsList.getItems().setAll(list);
+                    shortestList.getItems().clear();
+
+                    mutualList.getItems().clear();
+
+                    reset.fire();
+
+                    updateGraphVisualization();
+                } catch (VertexNotFoundException e) {
+                }
+            }
+        });
+        return friend;
+    }
+
+    private void updateFriendList() {
+        List<Person> allFriends;
+        try {
+            allFriends = network.getFriends(centralUser.getText());
+            List<Button> list = new LinkedList<>();
+            Button centralUserButton = friendButton(centralUser.getText());
+            centralUserButton.setStyle("-fx-font-weight: bold;");
+            list.add(centralUserButton);
+
+            for (Person friend : allFriends) {
+                list.add(friendButton(friend.getName()));
+            }
+            friendsList.getItems().setAll(list);
+            updateGraphVisualization();
+            updateComboBox();
+            history.getItems().setAll(network.getLog());
+        } catch (VertexNotFoundException e) {
+        }
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        BorderPane root = new BorderPane();
+        BorderPane loginRoot = new BorderPane();
+        friendRoot = new Pane();
+        Scene mainScene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
+        Scene loginScene = new Scene(loginRoot, WINDOW_WIDTH, WINDOW_HEIGHT);
+        friendScene = new Scene(friendRoot, 300, 125);
+        mainScene.getStylesheets().add("application/ateam69.css");
+        loginScene.getStylesheets().add("application/login.css");
+
+        // PROFILE
+        centralUser = new Label("NO_CENTRAL_USER");
+        centralUser.setFont(new Font("Arial", 30));
+
+        network = new Network();
+
+        Label label = new Label("Welcome to Social Network!");
+        label.setFont(new Font("Arial", 30));
+        HBox welcomehbox = new HBox(label);
+        welcomehbox.setAlignment(Pos.CENTER);
+        loginRoot.setTop(welcomehbox);
+
+        // LOGIN
+        Label usernameLabel = new Label("Username: ");
+        Label pwLabel = new Label("Password:  ");
+        Label statusLabel = new Label("");
+
+        TextField usernameText = new TextField("");
+        usernameText.setPromptText("Enter Username");
+
+        PasswordField pwText = new PasswordField();
+        pwText.setPromptText("Enter Password");
+
+        Button login = new Button("login");
+        login.setPrefWidth(Double.MAX_VALUE);
+        login.setOnMouseEntered(e -> login.setStyle("-fx-font-size:11pt;"));
+        login.setOnMouseExited(e -> login.setStyle("-fx-font-size:10pt;"));
+        login.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent arg0) {
+                String username = usernameLabel.getText().toString();
+                String pw = pwLabel.getText().toString();
+                // FIXME PASSWORD CHECKING
+                if (true) {
+                    // statusLabel.setText("Welcome back " + username);
+                    // statusLabel.setTextFill(Color.GREEN);
+                    primaryStage.setScene(mainScene);
+                    primaryStage.show();
+                    updateGraphVisualization();
+                } else {
+                    statusLabel.setText(
+                            "Couldn't find username or password! Try again later!");
+                    statusLabel.setTextFill(Color.RED);
+                }
+            }
+        });
+
+        HBox usernameBox = new HBox(usernameLabel, usernameText);
+        HBox pwBox = new HBox(pwLabel, pwText);
+        VBox loginBox = new VBox(usernameBox, pwBox, login, statusLabel);
+        loginBox.setMaxWidth(250);
+        loginBox.setMaxHeight(150);
+        loginBox.setStyle("-fx-background-color: #add8e6;");
+        loginBox.setAlignment(Pos.CENTER_LEFT);
+        loginBox.setSpacing(10);
+        loginBox.setBackground(new Background(new BackgroundFill(
+                Color.DARKGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
+        loginRoot.setCenter(loginBox);
+
+        // UPLOAD & SAVE MENU BAR
+        Menu file = new Menu("File");
+        MenuItem fileUploadButton = new MenuItem("Upload (ctrl + U)");
+        MenuItem fileSaveButton = new MenuItem("Save (ctrl + S)");
+        fileUploadButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent arg0) {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Open Resource File");
+                fileChooser.getExtensionFilters().add(
+                        new ExtensionFilter("Select a .txt file", "*.txt"));
+                File myFile = fileChooser.showOpenDialog(primaryStage);
+                if (myFile != null) {
+                    try {
+                        String newCentralName = network.parse(myFile);
+                        if (newCentralName != null) {
+                            centralUser.setText(newCentralName);
+                        } else {
+                            if (network.getAllUsers().size() > 0) {
+                                String name =
+                                        network.getAllUsers().get(0).getName();
+                                centralUser.setText(name);
+                                try {
+                                    network.setCentralUser(name);
+                                } catch (VertexNotFoundException e) {
+                                }
+                            }
+                        }
+                        updateFriendList();
+                        Alert success = new Alert(Alert.AlertType.INFORMATION,
+                                myFile.getName()
+                                        + " has been successfully uploaded!");
+                        success.showAndWait();
+                    } catch (FileNotFoundException e) {
+                    } catch (InvalidSyntaxException e) {
+                        Alert error = new Alert(Alert.AlertType.ERROR,
+                                "Invalid format at line " + e.getLineNum()
+                                        + "! Please try again with a different file!");
+                        error.showAndWait();
+                    }
+                }
+            }
+        });
+
+        fileSaveButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent arg0) {
+                FileChooser fileChooser = new FileChooser();
+
+                fileChooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("Text File (*.txt)",
+                                "*.txt"));
+
+                File file = fileChooser.showSaveDialog(primaryStage);
+
+                if (file != null) {
+                    try {
+                        network.save(file.getAbsolutePath());
+                        Alert success = new Alert(Alert.AlertType.INFORMATION,
+                                "Network has been successfully saved to "
+                                        + file.getName());
+                        success.showAndWait();
+                    } catch (IOException e) {
+                    }
+                }
+            }
+        });
+
+        file.getItems().add(fileUploadButton);
+        file.getItems().add(fileSaveButton);
+        MenuBar menu = new MenuBar(file);
+
+        // LOGOUT
+        EventHandler<ActionEvent> saveFileEventHandler = event -> {
+            Alert saveConfirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Do you want to save your current network?");
+
+            saveConfirmation.setHeaderText("Save Confirmation");
+
+            ButtonType saveButton = new ButtonType("Save");
+            ButtonType dontSaveButton = new ButtonType("Don't Save");
+            ButtonType cancelButton = new ButtonType("Cancel");
+
+            saveConfirmation.getButtonTypes().setAll(cancelButton,
+                    dontSaveButton, saveButton);
+
+            Button cancelBut = (Button) saveConfirmation.getDialogPane()
+                    .lookupButton(cancelButton);
+            cancelBut.setDefaultButton(false);
+
+            Button saveBut = (Button) saveConfirmation.getDialogPane()
+                    .lookupButton(saveButton);
+            saveBut.setDefaultButton(true);
+
+            Optional<ButtonType> saveResponse = saveConfirmation.showAndWait();
+            if (saveResponse.get() == saveButton) {
+                fileSaveButton.fire();
+                Alert info = new Alert(Alert.AlertType.INFORMATION,
+                        LOG_FILE_NAME + " has been successfully saved!");
+                info.showAndWait();
+                primaryStage.setScene(loginScene);
+                primaryStage.show();
+            } else if (saveResponse.get() == dontSaveButton) {
+                primaryStage.setScene(loginScene);
+                primaryStage.show();
+            } else {
+                event.consume();
+            }
+        };
+
+        // LOGOUT
+        Button logoutButton = new Button("Logout");
+        logoutButton.setOnAction(saveFileEventHandler);
+
+        // FRIEND LIST
+        this.friendsList = new ListView<>();
+        friendsList.setMaxHeight(225);
+        friendsList.setMinWidth(275);
+
+        // Button firstUser = friendButton("Deb");
+        // firstUser.setStyle("-fx-font-weight: bold;");
+        // this.friendsList.getItems().add(firstUser);
+        // this.friendsList.getItems().add(friendButton("Edd"));
+        // network.addFriend("Deb", "Edd");
+        // this.friendsList.getItems().add(friendButton("Bri"));
+        // network.addFriend("Deb", "Bri");
+
+
+        // friendListBoxSub.setPrefWidth(180);
+        // friendListBox.setAlignment(Pos.CENTER);
+        // friendListBox.setPrefHeight(200);
+
+        // SEARCH
+        TextField search = new TextField();
+        search.setPromptText("Seach for a friend");
+        Label underSearch = new Label("");
+        Button searchButton = new Button("Search");
+        reset.setVisible(false);
+
+
+        searchButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent arg0) {
+                List<Person> allFriends;
+                try {
+                    allFriends = network.getFriends(centralUser.getText());
+                    List<Button> list = new LinkedList<>();
+
+                    for (Person friend : allFriends) {
+                        if (friend.getName().toLowerCase().contains(search
+                                .getCharacters().toString().toLowerCase())) {
+                            list.add(friendButton(friend.getName()));
+                        }
+                    }
+                    friendsList.getItems().setAll(list);
+                    underSearch.setText(
+                            "Search under \"" + search.getCharacters() + "\"");
+                    reset.setVisible(true);
+                } catch (VertexNotFoundException e) {
+                }
+                // friendsList = new ListView<>();
+
+            }
+        });
+
+
+        reset.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent arg0) {
+                List<Person> allFriends;
+                try {
+                    allFriends = network.getFriends(centralUser.getText());
+                    List<Button> list = new LinkedList<>();
+
+                    for (Person friend : allFriends) {
+                        list.add(friendButton(friend.getName()));
+                    }
+                    list.add(friendButton(centralUser.getText()));
+                    friendsList.getItems().setAll(list);
+
+                    underSearch.setText("");
+                    reset.setVisible(false);
+                    search.setText("");
+                } catch (VertexNotFoundException e) {
+                }
+            }
+        });
+
+        HBox friendListBoxSub = new HBox(friendsList);
+
+        HBox resetPack = new HBox(underSearch, reset);
+        HBox searchPackSub = new HBox(search, searchButton);
+        VBox searchPack = new VBox(searchPackSub, resetPack);
+
+        VBox friendListBox = new VBox(new Label("My Connections:"),
+                friendListBoxSub, searchPack);
+
+
+        // CLOSE OR EXIT
+        EventHandler<WindowEvent> confirmCloseEventHandler = event -> {
+            Alert closeConfirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Do you want to exit Social Network?");
+            Button exitButton = (Button) closeConfirmation.getDialogPane()
+                    .lookupButton(ButtonType.OK);
+            exitButton.setText("Exit");
+            closeConfirmation.setHeaderText("Exit Confirmation");
+            Optional<ButtonType> closeResponse =
+                    closeConfirmation.showAndWait();
+
+            if (!ButtonType.OK.equals(closeResponse.get())) {
+                event.consume();
+            } else {
+                if (primaryStage.getScene().equals(mainScene)) {
+                    Alert saveConfirmation = new Alert(
+                            Alert.AlertType.CONFIRMATION,
+                            "Do you want to save your current network?");
+
+                    saveConfirmation.setHeaderText("Save Confirmation");
+
+                    ButtonType saveButton = new ButtonType("Save");
+                    ButtonType dontSaveButton = new ButtonType("Don't Save");
+                    ButtonType cancelButton = new ButtonType("Cancel");
+
+                    saveConfirmation.getButtonTypes().setAll(cancelButton,
+                            dontSaveButton, saveButton);
+
+                    Button cancelBut = (Button) saveConfirmation.getDialogPane()
+                            .lookupButton(cancelButton);
+                    cancelBut.setDefaultButton(false);
+
+                    Button saveBut = (Button) saveConfirmation.getDialogPane()
+                            .lookupButton(saveButton);
+                    saveBut.setDefaultButton(true);
+
+                    Optional<ButtonType> saveResponse =
+                            saveConfirmation.showAndWait();
+                    if (saveResponse.get() == saveButton) {
+                        fileSaveButton.fire();
+                        Alert info = new Alert(Alert.AlertType.INFORMATION,
+                                LOG_FILE_NAME
+                                        + " has been successfully saved!");
+                        info.setHeaderText(
+                                "Thank you for using our Social Network!");
+                        info.showAndWait();
+                    } else if (saveResponse.get() == dontSaveButton) {
+                        Alert info = new Alert(Alert.AlertType.INFORMATION);
+                        info.setHeaderText(
+                                "Thank you for using our Social Network!");
+                        info.showAndWait();
+                    } else {
+                        event.consume();
+                    }
+                } else {
+                    Alert info = new Alert(Alert.AlertType.INFORMATION);
+                    info.setHeaderText(
+                            "Thank you for using our Social Network!");
+                    info.showAndWait();
+                }
+            }
+        };
+        primaryStage.setOnCloseRequest(confirmCloseEventHandler);
+
+        // EDIT
+        // Menu editMenu = new Menu("Edit");
+        // MenuItem undoMenuButton = new MenuItem("Undo (ctrl + X)");
+        // undoMenuButton.setOnAction(new EventHandler<ActionEvent>() {
+        // @Override
+        // public void handle(ActionEvent arg0) {
+        // // TODO UNDO INSTRUCTION
+        //
+        // }
+        // });
+        // MenuItem redoMenuButton = new MenuItem("Redo (ctrl + Y)");
+        // redoMenuButton.setOnAction(new EventHandler<ActionEvent>() {
+        // @Override
+        // public void handle(ActionEvent arg0) {
+        // // TODO REDO INSTRUCTION
+        //
+        // }
+        // });
+        // editMenu.getItems().add(undoMenuButton);
+        // editMenu.getItems().add(redoMenuButton);
+        // menu.getMenus().add(editMenu);
+
+        // HELP
+        Menu helpMenu = new Menu("Help");
+        MenuItem helpMenuButton = new MenuItem("Help (ctrl + H)");
+        helpMenuButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                final Stage dialog = new Stage();
+                dialog.initModality(Modality.APPLICATION_MODAL);
+                dialog.initOwner(primaryStage);
+                VBox dialogVbox = new VBox(20);
+                File helpFile = new File("application/instructions.txt");
+                Scanner scnr;
+                String str = "";
+                try {
+                    scnr = new Scanner(helpFile);
+                    while (scnr.hasNextLine()) {
+                        str += scnr.nextLine() + "\n";
+                    }
+                } catch (FileNotFoundException e) {
+                }
+
+                dialogVbox.getChildren().add(new Text(str));
+
+                Scene dialogScene = new Scene(dialogVbox, 300, 800);
+                dialog.setScene(dialogScene);
+                dialog.show();
+            }
+        });
+        helpMenu.getItems().add(helpMenuButton);
+        menu.getMenus().add(helpMenu);
+
+        Label numGroups = new Label("Number of Connected Groups: "
+                + network.numConnectedComponents());
+        HBox numGroupsBox = new HBox(numGroups);
+
+
+        VBox rightBox =
+                new VBox(friendListBox, numGroupsBox, friendScene.getRoot());
+        rightBox.setMaxHeight(450);
+        rightBox.setMaxWidth(375);
+        rightBox.setSpacing(5);
+
+
+        // MUTUAL CONNECTION
+        for (Person friend : network.getAllUsers()) {
+            mutualA.getItems().add(friend.getName());
+        }
+        mutualA.setValue("--select person A--");
+        mutualA.setVisibleRowCount(5);
+        for (Person friend : network.getAllUsers()) {
+            mutualB.getItems().add(friend.getName());
+        }
+        mutualB.setValue("--select person B--");
+        mutualB.setVisibleRowCount(5);
+        VBox mutualBoxSub = new VBox(new HBox(new Label("Person A:"), mutualA),
+                new HBox(new Label("Person B:"), mutualB));
+        mutualBoxSub.setSpacing(5);
+
+        mutualList.setPrefSize(300, 100);
+        Button searchMutualButton = new Button("Search");
+        searchMutualButton.setOnAction(event -> {
+            if (mutualA.getValue().equals("--select person A--")
+                    || mutualB.getValue().equals("--select person B--")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "One or both of the responses are invalid");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                try {
+                    List<String> strName = network.mutualConnections(
+                            mutualA.getValue(), mutualB.getValue());
+                    List<Button> btnName = new LinkedList<Button>();
+                    for (String str : strName) {
+                        btnName.add(friendButton(str));
+                    }
+                    mutualList.getItems().setAll(btnName);
+                } catch (VertexNotFoundException e1) {
+                }
+            }
+        });
+        HBox mutualSub = new HBox(mutualList);
+        VBox mutualBox = new VBox(new Label("Find a mutual connection: "),
+                mutualBoxSub, searchMutualButton, mutualSub);
+        mutualBox.setSpacing(5);
+
+        // SHORTEST PATH TODO
+        for (Person friend : network.getAllUsers()) {
+            start.getItems().add(friend.getName());
+        }
+        start.setValue("--select starting person--");
+        start.setVisibleRowCount(5);
+
+        for (Person friend : network.getAllUsers()) {
+            target.getItems().add(friend.getName());
+        }
+        target.setValue("--select target person--");
+        target.setVisibleRowCount(5);
+
+        VBox shortestBoxSub = new VBox(new HBox(new Label("Start:"), start),
+                new HBox(new Label("Target:"), target));
+        shortestBoxSub.setSpacing(5);
+
+        Button shortestButton = new Button("Search");
+
+        shortestButton.setOnAction(event -> {
+            if (start.getValue().equals("--select starting person--")
+                    || target.getValue().equals("--select target person--")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "One or both of the responses are invalid");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                try {
+                    shortestList.getItems().setAll(network
+                            .djikstraSort(start.getValue(), target.getValue()));
+                } catch (VertexNotFoundException e) {
+                }
+            }
+        });
+
+        shortestList.setPrefSize(300, 100);
+        HBox shortestSub = new HBox(shortestList);
+        VBox shortestBox = new VBox(new Label("Find the shortest connection: "),
+                shortestBoxSub, shortestButton, shortestSub);
+        shortestBox.setSpacing(5);
+
+        Line line1 = new Line(0, 0, 350, 0);
+        line1.scaleXProperty().bind(mainScene.widthProperty().multiply(0.001));
+        line1.scaleYProperty().bind(mainScene.heightProperty().multiply(0.001));
+
+        line1.setStyle("-fx-stroke-width:100%;");
+        line1.setStroke(Color.LIGHTBLUE);
+
+        for (Person friend : network.getAllUsers()) {
+            targetCentral.getItems().add(friend.getName());
+        }
+        targetCentral.setValue("--select new central user--");
+        targetCentral.setVisibleRowCount(5);
+
+        // HERE
+        Button setCentralButton = new Button("Set Central User");
+        setCentralButton.setOnAction(event -> {
+            if (targetCentral.getValue()
+                    .equals("--select new central user--")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please select a central user");
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                centralUser.setText(targetCentral.getValue());
+                try {
+                    network.setCentralUser(targetCentral.getValue());
+                } catch (VertexNotFoundException e1) {
+                }
+                updateFriendList();
+            }
+        });
+        HBox setCentralBox =
+                new HBox(logoutButton, setCentralButton, targetCentral);
+
+        VBox leftBoxSub = new VBox(centralUser, setCentralBox, line1, mutualBox,
+                shortestBox);
+        leftBoxSub.setSpacing(10);
+
+        Line line2 = new Line(0, 0, 0, 535);
+        line2.setStroke(Color.LIGHTBLUE);
+
+        HBox leftBox = new HBox(leftBoxSub, line2);
+
+        leftBox.setMaxHeight(450);
+
+        // VBox leftBox = new VBox(centralUser, logoutButton);
+
+        // MIDDLE / CENTER BUTTON
+        // user actions
+        Button clearButton = new Button("Clear All");
+        Button addNewButton = new Button("Add New User");
+
+        clearButton.setMaxWidth(180);
+        addNewButton.setMaxWidth(180);
+        TextField newUser = new TextField();
+        newUser.setPromptText("Type Name Here");
+        newUser.setMaxWidth(180);
+
+
+
+        // CLEAR
+        clearButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+
+                if (centralUser.getText().equals("NO_CENTRAL_USER")) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "No central user found! Please upload a new file or add new user!");
+                    Optional<ButtonType> response = error.showAndWait();
+                    if (!ButtonType.OK.equals(response.get())) {
+                        event.consume();
+                    }
+                } else {
+                    reset.fire();
+                    for (Person friend : network.getAllUsers()) {
+                        try {
+                            network.removeUser(friend.getName());
+                        } catch (VertexNotFoundException e) {
+                        }
+                    }
+
+                    centralUser.setText("NO_CENTRAL_USER");
+
+                    friendsList.getItems().clear();
+
+                    updateFriendList();
+
+                    updateComboBox();
+
+                    numGroups.setText("Number of Connected Groups: "
+                            + network.numConnectedComponents());
+
+                    Alert info = new Alert(Alert.AlertType.INFORMATION,
+                            "Network has been successfully cleared!");
+                    info.showAndWait();
+
+                    updateGraphVisualization();
+                }
+            }
+        });
+
+
+        addNewButton.setOnAction(event -> {
+            if (newUser.getText() == null || newUser.getText().equals("")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please add username to the corresponding field");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                try {
+                    network.addUser(newUser.getText());
+                    if (centralUser.getText().equals("NO_CENTRAL_USER")) {
+                        centralUser.setText(newUser.getText());
+                    }
+                    numGroups.setText("Number of Connected Groups: "
+                            + network.numConnectedComponents());
+                    Alert info = new Alert(Alert.AlertType.INFORMATION, newUser
+                            .getText()
+                            + " has been successfully added to the network!");
+                    info.showAndWait();
+                    updateFriendList();
+                } catch (DuplicateKeyException e1) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "The username already exists in the network");
+
+                    Optional<ButtonType> response = error.showAndWait();
+                    if (!ButtonType.OK.equals(response.get())) {
+                        event.consume();
+                    }
+                }
+            }
+
+        });
+
+        // friend actions
+        Button addButton = new Button("Add Friend");
+        Button removeButton = new Button("Remove User");
+
+        TextField newFriend1 = new TextField();
+        newFriend1.setPromptText("User A");
+        newFriend1.setMaxWidth(90);
+
+        TextField newFriend2 = new TextField();
+        newFriend2.setPromptText("User B");
+        newFriend2.setMaxWidth(90);
+
+        addButton.setOnAction(event -> {
+            if (newFriend1.getText() == null || newFriend2.getText() == null
+                    || newFriend1.getText().equals("")
+                    || newFriend2.getText().equals("")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please add username to both fields");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else if (newFriend1.getText().equals(newFriend2.getText())) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please add 2 different usernames");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                try {
+                    reset.fire();
+                    network.addFriend(newFriend1.getText(),
+                            newFriend2.getText());
+
+                    if (centralUser.getText().equals("NO_CENTRAL_USER")) {
+                        centralUser.setText(newFriend1.getText());
+                    }
+
+                    updateFriendList();
+
+                    numGroups.setText("Number of Connected Groups: "
+                            + network.numConnectedComponents());
+
+                    Alert info = new Alert(Alert.AlertType.INFORMATION,
+                            newFriend1.getText() + " and "
+                                    + newFriend2.getText()
+                                    + " has been successfully added to the network!");
+                    info.showAndWait();
+                } catch (DuplicateEdgeException e1) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "The friendship already exists in the network");
+
+                    Optional<ButtonType> response = error.showAndWait();
+                    if (!ButtonType.OK.equals(response.get())) {
+                        event.consume();
+                    }
+                }
+            }
+        });
+
+        TextField removeFriend = new TextField();
+        removeFriend.setPromptText("Type Name Here");
+        removeFriend.setMaxWidth(180);
+
+        removeButton.setOnAction(event -> {
+            if (centralUser.getText().equals("NO_CENTRAL_USER")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "No central user found! Please upload a new file or add new user!");
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else if (removeFriend.getText() == null
+                    || removeFriend.getText().equals("")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please add username to the corresponding field");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else if (removeFriend.getText().equals(centralUser.getText())) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Removing central user is not allowed");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                try {
+                    reset.fire();
+
+                    network.removeUser(removeFriend.getText());
+
+                    numGroups.setText("Number of Connected Groups: "
+                            + network.numConnectedComponents());
+
+                    Alert info = new Alert(Alert.AlertType.INFORMATION,
+                            removeFriend.getText()
+                                    + " has been successfully removed from the network!");
+                    updateFriendList();
+
+                    info.showAndWait();
+                } catch (VertexNotFoundException e1) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "The username doesn't exist in the network");
+
+                    Optional<ButtonType> response = error.showAndWait();
+                    if (!ButtonType.OK.equals(response.get())) {
+                        event.consume();
+                    }
+                }
+            }
+
+        });
+
+        Button removeFriendshipButton = new Button("Remove Friendship");
+
+        TextField removeFriend1 = new TextField();
+        removeFriend1.setPromptText("User A");
+        removeFriend1.setMaxWidth(90);
+
+        TextField removeFriend2 = new TextField();
+        removeFriend2.setPromptText("User A");
+        removeFriend2.setMaxWidth(90);
+
+        removeFriendshipButton.setOnAction(event -> {
+            if (centralUser.getText().equals("NO_CENTRAL_USER")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "No central user found! Please upload a new file or add new user!");
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else if (removeFriend1.getText() == null
+                    || removeFriend2.getText() == null
+                    || removeFriend1.getText().equals("")
+                    || removeFriend2.getText().equals("")) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please add username to both fields");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else if (removeFriend1.getText()
+                    .equals(removeFriend2.getText())) {
+                Alert error = new Alert(Alert.AlertType.ERROR,
+                        "Please add 2 different usernames or use \"Remove Friend\" instead");
+
+                Optional<ButtonType> response = error.showAndWait();
+                if (!ButtonType.OK.equals(response.get())) {
+                    event.consume();
+                }
+            } else {
+                try {
+                    reset.fire();
+
+                    network.removeFriend(removeFriend1.getText(),
+                            removeFriend2.getText());
+                    updateFriendList();
+
+                    numGroups.setText("Number of Connected Groups: "
+                            + network.numConnectedComponents());
+
+                    Alert info = new Alert(Alert.AlertType.INFORMATION,
+                            removeFriend1.getText() + " and "
+                                    + removeFriend2.getText()
+                                    + " are no longer friend!");
+                    info.showAndWait();
+                } catch (VertexNotFoundException e1) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "One or both of the users couldn't be found");
+
+                    Optional<ButtonType> response = error.showAndWait();
+                    if (!ButtonType.OK.equals(response.get())) {
+                        event.consume();
+                    }
+                } catch (EdgeNotFoundException e1) {
+                    Alert error = new Alert(Alert.AlertType.ERROR,
+                            "Friendship not found");
+
+                    Optional<ButtonType> response = error.showAndWait();
+                    if (!ButtonType.OK.equals(response.get())) {
+                        event.consume();
+                    }
+                }
+            }
+        });
+
+        addButton.setMaxWidth(180);
+        removeButton.setMaxWidth(180);
+        removeFriendshipButton.setMaxWidth(180);
+
+
+        VBox addNewUserBox = new VBox(addNewButton, newUser);
+        addNewUserBox.setAlignment(Pos.CENTER);
+
+        HBox newFriendBox = new HBox(newFriend1, newFriend2);
+        newFriendBox.setAlignment(Pos.CENTER);
+
+        VBox addFriendsBox = new VBox(addButton, newFriendBox);
+        addFriendsBox.setAlignment(Pos.CENTER);
+
+        VBox removeFriendBox = new VBox(removeButton, removeFriend);
+        removeFriendBox.setAlignment(Pos.CENTER);
+
+        HBox removeFriendshipBoxSub = new HBox(removeFriend1, removeFriend2);
+        removeFriendshipBoxSub.setAlignment(Pos.CENTER);
+
+        VBox removeFriendshipBox =
+                new VBox(removeFriendshipButton, removeFriendshipBoxSub);
+        removeFriendshipBox.setAlignment(Pos.CENTER);
+
+        history.setMinSize(100, 150);
+        Label historyLabel = new Label("History");
+        VBox historyListBox = new VBox(historyLabel, history);
+        historyListBox.setPrefSize(150, 180);
+        historyListBox.setSpacing(5);
+
+        VBox centerBox = new VBox();
+        centerBox.getChildren().addAll(clearButton, addNewUserBox,
+                addFriendsBox, removeFriendBox, removeFriendshipBox,
+                historyListBox);
+        centerBox.setMaxWidth(200);
+        centerBox.setSpacing(20);
+        centerBox.setMaxHeight(450);
+        centerBox.setAlignment(Pos.TOP_CENTER);
+
+        // SET ALL MNEUMONIC
+        mainScene.addEventFilter(KeyEvent.KEY_PRESSED,
+                new EventHandler<KeyEvent>() {
+                    public void handle(KeyEvent ke) {
+                        final KeyCombination keyComb = new KeyCodeCombination(
+                                KeyCode.U, KeyCombination.CONTROL_DOWN);
+                        if (keyComb.match(ke)) {
+                            fileUploadButton.fire();
+                        }
+                    }
+                });
+        mainScene.addEventFilter(KeyEvent.KEY_PRESSED,
+                new EventHandler<KeyEvent>() {
+                    public void handle(KeyEvent ke) {
+                        final KeyCombination keyComb = new KeyCodeCombination(
+                                KeyCode.S, KeyCombination.CONTROL_DOWN);
+                        if (keyComb.match(ke)) {
+                            fileSaveButton.fire();
+                        }
+                    }
+                });
+        // mainScene.addEventFilter(KeyEvent.KEY_PRESSED,
+        // new EventHandler<KeyEvent>() {
+        // public void handle(KeyEvent ke) {
+        // final KeyCombination keyComb = new KeyCodeCombination(
+        // KeyCode.X, KeyCombination.CONTROL_DOWN);
+        // if (keyComb.match(ke)) {
+        // // TODO UNDO BUTTON
+        // }
+        // }
+        // });
+        // mainScene.addEventFilter(KeyEvent.KEY_PRESSED,
+        // new EventHandler<KeyEvent>() {
+        // public void handle(KeyEvent ke) {
+        // final KeyCombination keyComb = new KeyCodeCombination(
+        // KeyCode.Y, KeyCombination.CONTROL_DOWN);
+        // if (keyComb.match(ke)) {
+        // // TODO REDO BUTTON
+        // }
+        // }
+        // });
+        mainScene.addEventFilter(KeyEvent.KEY_PRESSED,
+                new EventHandler<KeyEvent>() {
+                    public void handle(KeyEvent ke) {
+                        final KeyCombination keyComb = new KeyCodeCombination(
+                                KeyCode.H, KeyCombination.CONTROL_DOWN);
+                        if (keyComb.match(ke)) {
+                            helpMenuButton.fire();
+                        }
+                    }
+                });
+        mainScene.addEventFilter(KeyEvent.KEY_PRESSED,
+                new EventHandler<KeyEvent>() {
+                    public void handle(KeyEvent ke) {
+                        final KeyCombination keyComb = new KeyCodeCombination(
+                                KeyCode.F, KeyCombination.CONTROL_DOWN);
+                        if (keyComb.match(ke)) {
+                            Platform.exit();
+                            System.exit(0);
+                        }
+                    }
+                });
+
+        Line bottomLine = new Line(0, 0, WINDOW_WIDTH, 0);
+        bottomLine.setStroke(Color.LIGHTBLUE);
+        VBox bottomBox = new VBox(new Label(
+                "@ateam-69 CS400 Fall 2019 University of Wisconsin - Madison"));
+        bottomBox.setSpacing(20);
+
+        // SET LAYOUT
+        root.setLeft(leftBox);
+        root.setTop(menu);
+        root.setRight(rightBox);
+        root.setBottom(bottomBox);
+        root.setCenter(centerBox);
+
+        // SHOW
+        primaryStage.setTitle(APP_TITLE);
+        primaryStage.setScene(loginScene);
+        primaryStage.show();
+    }
+
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
+

@@ -1,0 +1,24 @@
+.root{
+	-fx-spacing: 30.0;
+	-fx-background-color:lightblue;
+}
+
+.button{
+	-fx-font-family:"Arial";
+	-fx-font-weight: bold;
+	-fx-background-color: Linear-gradient(#9ea7e5, #61a2b1);
+	-fx-text-fill:#383640;
+}
+
+.button:hover{
+	-fx-background-color: Linear-gradient(#2a5058, #61a2b1);
+	-fx-text-fill:#ffffff;
+}
+
+.label{
+	-fx-font-family:"Arial";
+}
+
+.line{
+	-fx-stroke: red;
+}
