@@ -1,5 +1,5 @@
 Social Network
-An application where you can manage your social network.
+Application where you can manage your social network, see you and your friends mutual connections, see how you are connected with a certain people, and much more. It was made purely in Java as part of an assignment.
 
 Course: cs400
 Semester: Fall 2019
